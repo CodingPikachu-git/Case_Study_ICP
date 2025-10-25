@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 Dynamic Leaderboard</title>
+  <style>
+    body { 
+      background: #111; 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+    .leaderboard { 
+      width: 340px; 
+      border-radius: 11px; 
+      overflow: hidden; 
+      box-shadow: 0 2px 20px #0007; 
+      background: #000;
+    }
+    .topbar { 
+      background: #222; 
+      color: white; 
+      font-weight: bold; 
+      text-align: center; 
+      padding: 10px 0 4px; 
+      font-size: 1.38em; 
+    }
+    .lapbar { 
+      background: #222; 
+      color: gold; 
+      text-align: center; 
+      font-size: 1.09em; 
+      font-weight: bold; 
+      padding: 6px 0 10px; 
+    }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+    }
+    th, td { 
+      color: white; 
+      padding: 0.5em 0.5em; 
+      font-size: 1.06em; 
+    }
+    .team { 
+      width: 15px; 
+      border-radius: 3px; 
+    }
+    .rank { 
+      width: 35px; 
+      font-weight: bold; 
+      text-align: center; 
+    }
+    .name { 
+      font-weight: bold; 
+      text-align: left; 
+    }
+    .gap { 
+      text-align: right; 
+      padding-right: 10px;
+    }
+    .leader { 
+      color: gold !important; 
+      font-weight: 700; 
+    }
+    .highlight-up {
+      background: rgba(164, 246, 165, 0.3);
+      transition: background 0.8s ease-out;
+    }
+    .highlight-down {
+      background: rgba(255, 169, 169, 0.3);
+      transition: background 0.8s ease-out;
+    }
+
+    /* Control Panel Styles */
+    .controls {
+      background: #222;
+      padding: 20px;
+      border-radius: 11px;
+      color: white;
+      max-width: 400px;
+    }
+    .controls h3 {
+      margin-top: 0;
+      color: gold;
+    }
+    .controls button {
+      background: #E20613;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    .controls button:hover {
+      background: #C00510;
+    }
+    .controls input, .controls select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #444;
+      background: #333;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="leaderboard">
+      <div class="topbar">F1 RACE</div>
+      <div class="lapbar" id="lapDisplay">Lap 1/57</div>
+      <table id="leaderboardTable">
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="controls">
+      <h3>Control Panel</h3>
+      <button onclick="simulateOvertake()">Simulate Overtake</button>
+      <button onclick="updateRandomGaps()">Update Random Gaps</button>
+      <button onclick="nextLap()">Next Lap</button>
+      <button onclick="resetLeaderboard()">Reset</button>
+      
+      <h4 style="color: #aaa; margin-top: 20px;">Manual Update:</h4>
+      <select id="driverSelect"></select>
+      <input type="number" id="newGap" placeholder="New gap (seconds)" step="0.001">
+      <button onclick="updateDriver()">Update Driver</button>
+    </div>
+  </div>
+
+  <script>
+    // Initial driver data
+    let drivers = [
+      { name: 'LEC', gap: 0, color: '#E20613' },
+      { name: 'SAI', gap: 11.850, color: '#FFEB3B' },
+      { name: 'VER', gap: 12.252, color: '#3671C6' },
+      { name: 'PER', gap: 14.777, color: '#F91536' },
+      { name: 'BOT', gap: 16.347, color: '#2293D1' },
+      { name: 'HAM', gap: 18.481, color: '#6CD3BF' },
+      { name: 'GAS', gap: 18.332, color: '#6692CB' },
+      { name: 'ALO', gap: 20.359, color: '#018383' },
+      { name: 'NOR', gap: 20.155, color: '#72C3D7' },
+      { name: 'TSU', gap: 20.570, color: '#409A38' }
+    ];
+
+    let currentLap = 1;
+    let previousOrder = [];
+
+    function sortDrivers() {
+      drivers.sort((a, b) => a.gap - b.gap);
+    }
+
+    function renderLeaderboard() {
+      sortDrivers();
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      drivers.forEach((driver, index) => {
+        const row = document.createElement('tr');
+        
+        // Check if position changed
+        let highlightClass = '';
+        const prevIndex = previousOrder.indexOf(driver.name);
+        if (prevIndex !== -1 && prevIndex > index) {
+          highlightClass = 'highlight-up';
+        } else if (prevIndex !== -1 && prevIndex < index) {
+          highlightClass = 'highlight-down';
+        }
+
+        const gapText = index === 0 ? 'Leader' : `+${driver.gap.toFixed(3)}`;
+        const leaderClass = index === 0 ? 'leader' : '';
+
+        row.className = highlightClass;
+        row.innerHTML = `
+          <td class="rank ${leaderClass}">${index + 1}</td>
+          <td class="team" style="background:${driver.color}"></td>
+          <td class="name ${leaderClass}">${driver.name}</td>
+          <td class="gap ${leaderClass}">${gapText}</td>
+        `;
+        tbody.appendChild(row);
+
+        // Remove highlight after animation
+        if (highlightClass) {
+          setTimeout(() => row.className = '', 800);
+        }
+      });
+
+      previousOrder = drivers.map(d => d.name);
+      populateDriverSelect();
+    }
+
+    function populateDriverSelect() {
+      const select = document.getElementById('driverSelect');
+      select.innerHTML = '';
+      drivers.forEach(driver => {
+        const option = document.createElement('option');
+        option.value = driver.name;
+        option.textContent = driver.name;
+        select.appendChild(option);
+      });
+    }
+
+    function simulateOvertake() {
+      if (drivers.length < 2) return;
+      const idx = Math.floor(Math.random() * (drivers.length - 1)) + 1;
+      const temp = drivers[idx].gap;
+      drivers[idx].gap = drivers[idx - 1].gap - Math.random() * 0.5;
+      drivers[idx - 1].gap = temp + Math.random() * 0.5;
+      renderLeaderboard();
+    }
+
+    function updateRandomGaps() {
+      drivers.forEach((driver, i) => {
+        if (i > 0) {
+          driver.gap += (Math.random() - 0.3) * 2;
+          if (driver.gap < 0.1) driver.gap = 0.1;
+        }
+      });
+      renderLeaderboard();
+    }
+
+    function nextLap() {
+      currentLap++;
+      document.getElementById('lapDisplay').textContent = `Lap ${currentLap}/57`;
+      updateRandomGaps();
+    }
+
+    function resetLeaderboard() {
+      currentLap = 1;
+      document.getElementById('lapDisplay').textContent = `Lap 1/57`;
+      drivers = [
+        { name: 'LEC', gap: 0, color: '#E20613' },
+        { name: 'SAI', gap: 11.850, color: '#FFEB3B' },
+        { name: 'VER', gap: 12.252, color: '#3671C6' },
+        { name: 'PER', gap: 14.777, color: '#F91536' },
+        { name: 'BOT', gap: 16.347, color: '#2293D1' },
+        { name: 'HAM', gap: 18.481, color: '#6CD3BF' },
+        { name: 'GAS', gap: 18.332, color: '#6692CB' },
+        { name: 'ALO', gap: 20.359, color: '#018383' },
+        { name: 'NOR', gap: 20.155, color: '#72C3D7' },
+        { name: 'TSU', gap: 20.570, color: '#409A38' }
+      ];
+      renderLeaderboard();
+    }
+
+    function updateDriver() {
+      const selectedDriver = document.getElementById('driverSelect').value;
+      const newGap = parseFloat(document.getElementById('newGap').value);
+      
+      if (isNaN(newGap)) {
+        alert('Please enter a valid gap value');
+        return;
+      }
+
+      const driver = drivers.find(d => d.name === selectedDriver);
+      if (driver) {
+        driver.gap = newGap;
+        renderLeaderboard();
+      }
+    }
+
+    // Initial render
+    renderLeaderboard();
+  </script>
+</body>
+</html>
