@@ -1,1 +1,179 @@
 ICP case study: Live leaderboard updating
+
+Leaderboard Management System
+
+> A Real-Time Leaderboard Case Study – Competitive Programming Principles Applied
+
+Table of Contents
+
+- Overview
+- Features
+- Technologies
+- Project Structure
+- How It Works
+  - Core Data Structures
+  - Complexity Analysis
+- Modules & Code Snippets
+- How to Run
+- Demo Output
+- Discussion: Optimization & CP
+- References
+
+---
+
+ Overview
+
+This project implements a real-time leaderboard system, inspired by F1 race rankings, to demonstrate practical uses of competitive programming (CP) algorithms and data structures.
+
+---
+
+ Features
+
+- Add/Remove drivers with gap times
+- Update lap times & see immediate re-ranking
+- Display leaderboard/top-K with efficient sorting
+- Menu-driven Python CLI
+- Clean, documented, and supports up to 10,000 entries in real time
+
+---
+
+Technologies
+
+- Python 3.8+
+- Standard Library only (no dependencies)
+- HTML/CSS/JS for web visualization
+
+---
+
+Project Structure
+
+leaderboard-system/
+leaderboard_core.py # Core ranking algorithms
+leaderboard_userdriven.py # Menu-based user CLI (MVP)
+leaderboard.html # Optional: Fancy F1-style UI demo
+README.md # This documentation file
+
+---
+
+*How It Works*
+
+-Core Data Structures
+
+Sorted List
+- Maintains (gap, name) tuples in sorted order (fast ranking)
+- All updates (insert/update/remove) use binary search (`bisect`)
+
+HashMap
+- Maps driver name to current gap (O(1) lookup for existence/updates)
+
+Why Use This Combo?
+- Fast insert/find/delete (amortized O(log n))
+- Instant rank lookup & top-K retrieval
+
+---
+
+### Complexity Analysis
+
+| Operation         | Time      | Explanation              |
+|-------------------|-----------|--------------------------|
+| Add/Update Driver | O(log n)  | Binary search & insert   |
+| Get Rank          | O(log n)  | Binary search            |
+| Display Top-K     | O(k)      | List slice (sorted)      |
+| Remove Driver     | O(log n)  | Binary search & pop      |
+
+---
+
+Modules & Code Snippets
+
+1. Add Driver
+
+def module_1_add_driver():
+# Accepts a three-letter code and gap (floating point, >=0).
+# Inserts or updates, with full input validation and error handling.
+
+- Checks for 3-letter code
+- Validates non-negative gap time
+- Prompts before overwriting existing entry
+
+---
+
+### 2. **Update Lap Time**
+
+def module_2_update_lap_time():
+- Let the user update the lap time for an existing driver.
+- Shows previous and new rank (if changed).
+- Handles value errors and negatives.
+
+- Lists all drivers, allows pick-by-name update
+- Displays position movement on update
+
+---
+
+3. Display Leaderboard
+
+def module_3_display_leaderboard():
+- Shows the sorted leaderboard (top 20 or fewer)
+- Clearly displays rank, code, gap, and highlights the leader
+
+- Uses `top_k` for quick retrieval
+
+---
+
+4. Remove Driver
+
+def module_4_remove_driver():
+- Let the user specify code to remove a driver from the system
+- Checks for existence and confirms before deleting
+
+---
+
+5. Load Sample Data
+
+def load_sample_data():
+- Bulk loads 10 realistic F1 driver entries for demo/testing purposes
+
+---
+
+"Core Data Structure Methods"
+
+Update/Add:
+def update(self, name: str, gap: float):
+- Removes previous, inserts new (if exists),
+- Maintains sorted order (O(log n) with bisect + insort)
+
+Get Rank:
+def get_rank(self, name: str) -> Optional[int]:
+- Returns 1-indexed rank or None if not found (O(log n))
+
+Top-K:
+def top_k(self, k: int) -> List[Tuple[int, str, float]]:
+- Returns list of ranking tuples (O(k))
+
+---
+
+How to Run Menu-Driven Python CLI
+
+python leaderboard_userdriven.py
+
+-- Follow the menu prompts to add, update, display, or remove drivers --
+
+---
+
+- *Why Binary Search?*  
+  Fast O(log n) insertion and rank queries—key for CP tasks
+- *Why Hash Maps?*  
+  Instant check for driver existence & rank in large lists
+- *How is this CP?*  
+  Demonstrates practical application of algorithms (sorting, searching, hash tables) for a common contest system problem.
+- *Scalability*  
+  Handles 10,000+ entries interactively; could adapt to a larger scale using BSTs or database solutions
+
+---
+
+##References
+
+- [CP-Algorithms – Binary Search](https://cp-algorithms.com/)
+- Python Standard Library: [bisect](https://docs.python.org/3/library/bisect.html)
+- F1 broadcast/race leaderboard inspiration
+
+---
