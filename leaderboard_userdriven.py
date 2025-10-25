@@ -212,7 +212,7 @@ def main():
                 print("Success: All data cleared!")
         elif choice == '0':
             print("\n" + "=" * 60)
-            print("Thank you for using F1 Leaderboard Management System!")
+            print("You have exitted the F1 Leaderboard Management System!")
             print("=" * 60)
             break
         else:
